@@ -24,8 +24,8 @@ checktools() {
           echo 'Coreutils is required for install, basename, readlink, md5sum and other utilities, but is not installed or found in sh $PATH.';;
         jarsigner|keytool)
           echo 'JDK is required for jarsigner and keytools utilities, but is not installed or found in sh $PATH.';;
-        aapt|zipalign)
-          echo 'Android SDK is required for aapt and zipalign utilities, but is not installed or found in sh $PATH.';;
+        aapt|apksigner|zipalign)
+          echo 'Android SDK is required for aapt, apksigner and zipalign utilities, but is not installed or found in sh $PATH.';;
         *)
           echo "$command is required but is not installed.";;
       esac
@@ -33,14 +33,22 @@ checktools() {
     else
       case $command in
         zipalign)
-          if ! zipalign 2>&1 | grep -q -e "page align stored shared object files" -e "page alignment for stored shared object files"; then
+          if ! zipalign 2>&1 | grep -q -e "-p: "; then  # check for page alignment support
             echo 'zipalign is outdated. Install a more recent version from the Android SDK and findable in sh $PATH.' >&2
             missing="$missing $command"
           fi;;
         aapt)
-          av="0$(aapt v 2>&1 | sed -n 's/.*v0\.2-\?\([0-9]*\)/\1/p')"
-          if [ "$av" -lt "04000000" ] ; then
-            echo 'aapt is outdated. Install a more recent version from the Android SDK and findable in sh $PATH.' >&2
+          avdebian="0$(aapt v 2>&1 | sed -n 's/.*v0\.2-\([0-9][0-9]\)\(\.\).*/\1/p')"  # should be zero for regular SDK version numbers
+          if [ "$avdebian" -lt "026" ] ; then
+            av="0$(aapt v 2>&1 | sed -n 's/.*v0\.2-\([0-9]*\)/\1/p')"
+            if [ "$av" -lt "04000000" ] ; then
+              echo 'aapt is outdated. Install a more recent version from the Android SDK and findable in sh $PATH.' >&2
+              missing="$missing $command"
+            fi
+          fi;;
+        git-lfs)
+          if ! git lfs env | grep -q -e "filter.lfs.clean" || ! git lfs env | grep -q -e "filter.lfs.smudge" || ! git lfs env | grep -q -e "filter.lfs.process"; then
+            echo 'Git LFS has not been set-up, please run "git lfs install".' >&2
             missing="$missing $command"
           fi;;
       #*)

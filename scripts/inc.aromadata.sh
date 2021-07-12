@@ -152,8 +152,6 @@ form(
       "Duo",     "<b>Google Duo</b>",       "",                      "check",
       "Earth",     "<b>Google Earth</b>",       "",                      "check",
       "ExchangeGoogle",     "<b>Google Exchange Services</b>",       "",                      "check",
-      "FaceDetect",     "<b>Face Detection Library</b>",       "",                      "check",
-      "FaceUnlock",     "<b>Trusted Face</b>",       "",                      "check",
       "Fitness",     "<b>Google Fit</b>",       "",                      "check",
       "GCS",     "<b>Google Connectivity Services</b>",       "Requires Android 5.1 or later, To Exclude BOTH Google Connectivity Services AND Project Fi by Google <#f00>OR</#> To Include Google Connectivity Services",                      "check",
       "Gmail",     "<b>Gmail</b>",       "",                      "check",
@@ -180,9 +178,11 @@ form(
       "PlayGames",     "<b>Google Play Games</b>",       "",                      "check",
       "PrintServiceGoogle",     "<b>Print Service Recommendation Service</b>",       "Requires Android 7.0 or later",                      "check",
       "ProjectFi",     "<b>Project Fi</b>",       "Requires Android 5.1 or later",                      "check",
+      "Recorder",     "<b>Google Recorder</b>",       "Requires Android 9.0 or later",                      "check",
       "Sheets",     "<b>Google Sheets</b>",       "",                      "check",
       "Slides",     "<b>Google Slides</b>",       "",                      "check",
       "Search",     "<b>Google Search</b>",       "To Exclude Google Search AND Google Now Launcher/Pixel Launcher <#f00>OR</#> To Include Google Search",                      "check",
+      "SoundPicker",     "<b>Sound Picker</b>",       "",                      "check",
       "Speech",     "<b>Offline Speech Files</b>",       "Required for offline voice dicatation support",                      "check",
       "StorageManagerGoogle",     "<b>Google Smart Storage</b>",       "Requires Android 7.0 or later",                      "check",
       "Street",     "<b>Google Street View</b>",       "",                      "check",
@@ -194,6 +194,7 @@ form(
       "WebViewGoogle",     "<b>Android System WebView</b>",       "Requires Android 5.1 or later, WebViewStub is installed on Android 7.0+ instead when Google Chrome is selected",                      "check",
       "Wellbeing",     "<b>Digital Wellbeing</b>",       "Requires Android 9.0 or later",                      "check",
       "YouTube",     "<b>YouTube</b>",       "",                      "check",
+      "YTMusic",     "<b>YouTube Music</b>",       "",                      "check",
       "Zhuyin",     "<b>Google Zhuyin Input</b>",       "",                      "check"
 );
 # Duplicate aromagapps.prop and rename it to gapps.prop - this is useful because the selections won't be erased by the complete installation (menu.prop selected ==2)
@@ -295,7 +296,6 @@ form(
       "extest",     "<b>Test</b>",       "To perform a simulation generating a detailed log, but <u>WILL NOT MAKE ANY CHANGES</u> to your device.",                      "check",
       "exswype",     "<b>SkipSwypelibs</b>",       "To skip/remove the installation of the Google Swype libraries for the AOSP Keyboard",                      "check",
       "exsubstitute","<b>SubstituteSwypelibs</b>", "To overwrite the AOSP Keyboard libraries with the Google Swype libraries instead of adding",                      "check",
-      "exnopreodex",   "<b>NoPreODEX</b>",           "To disable the smart Pre-ODEX-ing on Marshmallow+ ROMs",                      "check",
       "exclean",     "<b>ForceClean</b>",       "Ignores detection of dirty installations, force the installer to behave as if it is a clean install <#f00>DO NOT REPORT ANY BUGS IF USED</#>",                      "check",
       "GoogleAssistant",     "<b>GoogleAssistant</b>",       "To enable Google Assistant support in the build.prop",                      "check",
       "WebViewStub",     "<b>WebViewStub</b>",       "Placeholder for Google WebView, on 7.0+ automatically used instead of WebViewGoogle if Chrome is installed",                      "check"
@@ -326,11 +326,6 @@ if
   prop("extra.prop", "exsubstitute")=="1"
 then
   appendvar("gapps", "substituteswypelibs\n");
-endif;
-if
-  prop("extra.prop", "exnopreodex")=="1"
-then
-  appendvar("gapps", "nopreodex\n");
 endif;
 if
   prop("extra.prop", "exclean")=="1"
@@ -493,18 +488,6 @@ then
 endif;
 
 if
-  prop("gapps.prop", "FaceDetect")=="1"
-then
-  appendvar("gapps", "FaceDetect\n");
-endif;
-
-if
-  prop("gapps.prop", "FaceUnlock")=="1"
-then
-  appendvar("gapps", "FaceUnlock\n");
-endif;
-
-if
   prop("gapps.prop", "Fitness")=="1"
 then
   appendvar("gapps", "Fitness\n");
@@ -661,6 +644,12 @@ then
 endif;
 
 if
+  prop("gapps.prop", "Recorder")=="1"
+then
+  appendvar("gapps", "Recorder\n");
+endif;
+
+if
   prop("gapps.prop", "Sheets")=="1"
 then
   appendvar("gapps", "Sheets\n");
@@ -676,6 +665,12 @@ if
   prop("gapps.prop", "Search")=="1"
 then
   appendvar("gapps", "Search\n");
+endif;
+
+if
+  prop("gapps.prop", "SoundPicker")=="1"
+then
+  appendvar("gapps", "SoundPicker\n");
 endif;
 
 if
@@ -742,6 +737,12 @@ if
   prop("gapps.prop", "YouTube")=="1"
 then
   appendvar("gapps", "YouTube\n");
+endif;
+
+if
+  prop("gapps.prop", "YTMusic")=="1"
+then
+  appendvar("gapps", "YTMusic\n");
 endif;
 
 if

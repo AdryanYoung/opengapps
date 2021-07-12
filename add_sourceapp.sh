@@ -12,13 +12,12 @@
 #    GNU General Public License for more details.
 #
 
-command -v realpath >/dev/null 2>&1 || { echo "realpath is required but it's not installed, aborting." >&2; exit 1; }
-TOP="$(realpath .)"
+TOP=$(cd "${0%/*}" && pwd -P) || exit 1
 CACHE="$TOP/cache"
 SOURCES="$TOP/sources"
 SCRIPTS="$TOP/scripts"
 CERTIFICATES="$SCRIPTS/certificates"
-APKTOOL="$SCRIPTS/apktool-resources/apktool_2.4.0.jar"
+APKTOOL="$SCRIPTS/apktool-resources/apktool_2.5.0.jar"
 # shellcheck source=scripts/inc.tools.sh
 . "$SCRIPTS/inc.tools.sh"
 # shellcheck source=scripts/inc.compatibility.sh

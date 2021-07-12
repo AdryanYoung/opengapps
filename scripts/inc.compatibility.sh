@@ -13,7 +13,7 @@
 
 cameracompatibilityhack(){
   if [ "$API" -le "19" ]; then
-    echo '    A0001|bacon|find7) cameragoogle_compat=false;; # bacon or A0001=OnePlus One | find7=Oppo Find7 and Find7a' >> "$1"
+    echo '    A0001|bacon|find7) cameragoogle_compat=false;; # bacon or A0001=OnePlus One | find7=Oppo Find7 and Find7a'
   fi
 }
 
@@ -23,24 +23,19 @@ camerav3compatibilityhack(){
 # Google Camera fallback to Legacy if incompatible with new Camera API
 case $newcamera_compat in
   false*) gapps_list=${gapps_list/cameragoogle/cameragooglelegacy}; log "Google Camera version" "Legacy";;
-esac' >> "$1"
+esac'
   fi
 }
 
 keyboardgooglenotremovehack(){
   if [ "$API" -le "19" ]; then
-    echo '  sed -i "\:/system/app/LatinImeGoogle.apk:d" $gapps_removal_list;'>> "$1"
+    echo '  sed -i "\:/system/app/LatinImeGoogle.apk:d" $gapps_removal_list;'
   else
-    echo '  sed -i "\:/system/app/LatinImeGoogle:d" $gapps_removal_list;'>> "$1"
+    echo '  sed -i "\:/system/app/LatinImeGoogle:d" $gapps_removal_list;'
   fi
 }
 
 keyboardlibhack(){
-  #if [ "$API" -ge "24" ]; then # on Nougat there are officially no swypelibs, but we can use the Marshmallow ones for now, they are still AOSP compatible
-  #  REQDLIST=""
-  #  KEYBDLIBS=""
-  #  KEYBDINSTALLCODE=""
-  #el
   if [ "$API" -ge "23" ]; then # on Marshmallow it is like Lollipop but with extra libjni_keyboarddecoder.so; on Marshmallow we support all platforms
     gappscore_optional="swypelibs $gappscore_optional"
     REQDLIST='/system/lib/libjni_latinimegoogle.so
@@ -48,7 +43,13 @@ keyboardlibhack(){
 /system/app/LatinIME/lib/$arch/libjni_latinimegoogle.so
 /system/lib/libjni_keyboarddecoder.so
 /system/lib64/libjni_keyboarddecoder.so
-/system/app/LatinIME/lib/$arch/libjni_keyboarddecoder.so'
+/system/app/LatinIME/lib/$arch/libjni_keyboarddecoder.so
+/system/product/lib/libjni_latinimegoogle.so
+/system/product/lib64/libjni_latinimegoogle.so
+/system/product/app/LatinIME/lib/$arch/libjni_latinimegoogle.so
+/system/product/lib/libjni_keyboarddecoder.so
+/system/product/lib64/libjni_keyboarddecoder.so
+/system/product/app/LatinIME/lib/$arch/libjni_keyboarddecoder.so'
     KEYBDLIBS='keybd_lib_google="libjni_latinimegoogle.so"
 keybd_dec_google="libjni_keyboarddecoder.so"
 keybd_lib_aosp="libjni_latinime.so"'
@@ -58,27 +59,42 @@ if ( ! contains "$gapps_list" "keyboardgoogle" ); then
   if [ "$skipswypelibs" = "false" ]; then
     if [ "$substituteswypelibs" = "true" ]; then
       keybd_lib_target="$keybd_lib_aosp"
-      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google" # remove swypelibs and symlink if any
-      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google" # remove swypelibs and symlink if any
+      # remove swypelibs and symlink if any
+      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google" 
+      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
+      rm -f "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_google" 
+      rm -f "/system/product/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
     else
       keybd_lib_target="$keybd_lib_google"
-      ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp" # relink aosp as the normal link
+      # relink aosp as the normal link
+      ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
+      ln -sfn "/system/product/$libfolder/$keybd_lib_aosp" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
     fi
     ui_print "- Installing swypelibs"
     extract_app "Optional/swypelibs-lib-$arch"  # Keep it simple, swypelibs is only lib-$arch
     install -d "/system/app/LatinIME/$libfolder/$arch"
-    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_target" # create required symlink
-    ln -sfn "/system/$libfolder/$keybd_dec_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google" # create required symlink
+    # create required symlinks
+    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_target"
+    ln -sfn "/system/$libfolder/$keybd_dec_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
+    ln -sfn "/system/product/$libfolder/$keybd_lib_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_target"
+    ln -sfn "/system/product/$libfolder/$keybd_dec_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
 
     # Add same code to backup script to ensure symlinks are recreated on addon.d restore
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/$libfolder/$keybd_dec_google\" \"\$SYS/app/LatinIME/$libfolder/$arch/$keybd_dec_google\"" $bkup_tail
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/$libfolder/$keybd_lib_google\" \"\$SYS/app/LatinIME/$libfolder/$arch/$keybd_lib_target\"" $bkup_tail
+    sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/product/$libfolder/$keybd_dec_google\" \"\$SYS/product/app/LatinIME/$libfolder/$arch/$keybd_dec_google\"" $bkup_tail
+    sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/product/$libfolder/$keybd_lib_google\" \"\$SYS/product/app/LatinIME/$libfolder/$arch/$keybd_lib_target\"" $bkup_tail
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    install -d \"\$SYS/app/LatinIME/$libfolder/$arch\"" $bkup_tail
   else
     ui_print "- Removing swypelibs"
-    rm -f "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google" # remove swypelibs and symlink if any
-    rm -f "/system/$libfolder/$keybd_dec_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google" # remove swypelibs and symlink if any
-    ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp" # restore non-swypelibs symlink
+    # remove swypelibs and symlink if any
+    rm -f "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
+    rm -f "/system/$libfolder/$keybd_dec_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
+    rm -f "/system/product/$libfolder/$keybd_lib_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
+    rm -f "/system/product/$libfolder/$keybd_dec_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_dec_google"
+    # restore non-swypelibs symlink
+    ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
+    ln -sfn "/system/product/$libfolder/$keybd_lib_aosp" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
   fi
 fi'
   elif [ "$API" -gt "19" ]; then # on Lollipop there are symlinks in /LatinIME/lib/ and we don't need to remove the aosp lib
@@ -87,7 +103,10 @@ fi'
       gappscore_optional="swypelibs $gappscore_optional"
       REQDLIST='/system/lib/libjni_latinimegoogle.so
 /system/lib64/libjni_latinimegoogle.so
-/system/app/LatinIME/lib/$arch/libjni_latinimegoogle.so'
+/system/app/LatinIME/lib/$arch/libjni_latinimegoogle.so
+/system/product/lib/libjni_latinimegoogle.so
+/system/product/lib64/libjni_latinimegoogle.so
+/system/product/app/LatinIME/lib/$arch/libjni_latinimegoogle.so'
       KEYBDLIBS='keybd_lib_google="libjni_latinimegoogle.so"
 keybd_lib_aosp="libjni_latinime.so"'
       # Only touch AOSP keyboard only if it is not removed
@@ -96,23 +115,34 @@ if ( ! contains "$gapps_list" "keyboardgoogle" ); then
   if [ "$skipswypelibs" = "false" ]; then
     if [ "$substituteswypelibs" = "true" ]; then
       keybd_lib_target="$keybd_lib_aosp"
-      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google" # remove swypelibs and symlink if any
+      # remove swypelibs and symlink if any
+      rm -f "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
+      rm -f "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
     else
       keybd_lib_target="$keybd_lib_google"
-      ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp" # relink aosp as the normal link
+      # relink aosp as the normal link
+      ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
+      ln -sfn "/system/product/$libfolder/$keybd_lib_aosp" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
     fi
     ui_print "- Installing swypelibs"
     extract_app "Optional/swypelibs-lib-$arch"  # Keep it simple, swypelibs is only lib-$arch
     install -d "/system/app/LatinIME/$libfolder/$arch"
-    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_target" # create required symlink
+    # create required symlinks
+    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_target"
+    ln -sfn "/system/product/$libfolder/$keybd_lib_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_target"
 
     # Add same code to backup script to ensure symlinks are recreated on addon.d restore
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/$libfolder/$keybd_lib_google\" \"\$SYS/app/LatinIME/$libfolder/$arch/$keybd_lib_target\"" $bkup_tail
+    sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/product/$libfolder/$keybd_lib_google\" \"\$SYS/product/app/LatinIME/$libfolder/$arch/$keybd_lib_target\"" $bkup_tail
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    install -d \"\$SYS/app/LatinIME/$libfolder/$arch\"" $bkup_tail
   else
     ui_print "- Removing swypelibs"
-    rm -f "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google" # remove swypelibs and symlink if any
-    ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp" # restore non-swypelibs symlink
+    # remove swypelibs and symlink if any
+    rm -f "/system/$libfolder/$keybd_lib_google" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
+    rm -f "/system/product/$libfolder/$keybd_lib_google" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_google"
+    # restore non-swypelibs symlink
+    ln -sfn "/system/$libfolder/$keybd_lib_aosp" "/system/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
+    ln -sfn "/system/product/$libfolder/$keybd_lib_aosp" "/system/product/app/LatinIME/$libfolder/$arch/$keybd_lib_aosp"
   fi
 fi';;
       *) REQDLIST=""
@@ -124,7 +154,9 @@ fi';;
       arm*)
         gappscore_optional="swypelibs $gappscore_optional"
         REQDLIST="/system/lib/libjni_latinime.so
-/system/lib/libjni_latinimegoogle.so"
+/system/lib/libjni_latinimegoogle.so
+/system/product/lib/libjni_latinime.so
+/system/product/lib/libjni_latinimegoogle.so"
         KEYBDLIBS='keybd_lib_google="libjni_latinimegoogle.so"
 keybd_lib_aosp="libjni_latinime.so"'
         # Only touch AOSP keyboard only if it is not removed
@@ -133,13 +165,18 @@ if ( ! contains "$gapps_list" "keyboardgoogle" ); then
   if [ "$skipswypelibs" = "false" ]; then
     ui_print "- Installing swypelibs"
     extract_app "Optional/swypelibs-lib-$arch"  # Keep it simple, swypelibs is only lib-$arch
-    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/$libfolder/$keybd_lib_aosp" # create required symlink
+    # create required symlinks
+    ln -sfn "/system/$libfolder/$keybd_lib_google" "/system/$libfolder/$keybd_lib_aosp"
+    ln -sfn "/system/product/$libfolder/$keybd_lib_google" "/system/product/$libfolder/$keybd_lib_aosp"
 
     # Add same code to backup script to ensure symlinks are recreated on addon.d restore
     sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/$libfolder/$keybd_lib_google\" \"\$SYS/$libfolder/$keybd_lib_aosp\"" $bkup_tail
+    sed -i "\:# Recreate required symlinks (from GApps Installer):a \    ln -sfn \"\$SYS/product/$libfolder/$keybd_lib_google\" \"\$SYS/product/$libfolder/$keybd_lib_aosp\"" $bkup_tail
   else
     ui_print "- Removing swypelibs"
-    rm -f "/system/$libfolder/$keybd_lib_google" # remove swypelibs
+    # remove swypelibs
+    rm -f "/system/$libfolder/$keybd_lib_google"
+    rm -f "/system/product/$libfolder/$keybd_lib_google"
   fi
 fi';;
       *) REQDLIST=""
@@ -247,6 +284,17 @@ kitkatpathshack(){
   fi
 }
 
+launcherhack(){
+  if [ "$API" -ge "28" ]; then
+    cat <<'EOFILE'
+# If we're installing the pixel launcher overlay apk we must ADD launcher to $aosp_remove_list (if it's not already there)
+if ( contains "$gapps_list" "pixellauncher" ) && ( ! contains "$aosp_remove_list" "launcher" ); then
+  aosp_remove_list="${aosp_remove_list}launcher"$'\n'
+fi
+EOFILE
+  fi
+}
+
 minapihack(){
   useminapi=""
   case "$package" in
@@ -255,18 +303,30 @@ minapihack(){
         useminapi="24"
       fi;;
     com.google.android.gms)
-      if [ "$API" -ge "28" ]; then
-        useminapi="28"
-      elif [ "$API" -ge "26" ]; then
-        useminapi="26"
+      if [ "$API" -ge "27" ]; then
+        useminapi="27"
       elif [ "$API" -ge "23" ]; then
         useminapi="23"
       elif [ "$API" -ge "21" ]; then
         useminapi="21"
       fi;;
     com.android.chrome)
-      if [ "$API" -ge "24" ]; then
+      if [ "$ARCH" = "arm64" ] && [ "$API" -ge "29" ]; then # for now only available on arm64
+        useminapi="29"
+      elif [ "$API" -ge "24" ]; then
         useminapi="24"
+      elif [ "$API" -ge "21" ]; then
+        useminapi="21"
+      fi;;
+    com.google.android.webview)
+      if [ "$ARCH" = "arm64" ] && [ "$API" -ge "29" ]; then # for now only available on arm64
+        useminapi="29"
+      elif [ "$API" -ge "21" ]; then
+        useminapi="21"
+      fi;;
+    com.google.android.googlequicksearchbox)
+      if [ "$ARCH" = "arm64" ] && [ "$API" -ge "29" ]; then # for now only available on arm64
+        useminapi="29"
       elif [ "$API" -ge "21" ]; then
         useminapi="21"
       fi;;
@@ -285,13 +345,13 @@ systemlibhack(){
 
 universalremoverhack(){
   if [ "$API" -le "19" ]; then
-    tee -a "$1" > /dev/null <<'EOFILE'
-                    1)  user_remove_folder_list="${user_remove_folder_list}$(find "$folder" -type f -iname "$testapk")"$'\n'; # Add found file to list
-                        user_remove_folder_list="${user_remove_folder_list}$(printf "$(find "$folder" -type f -iname "$testapk")" | rev | cut -c 4- | rev)odex"$'\n'; # Add odex to list
+    cat <<'EOFILE'
+                    1)  user_remove_folder_list="${user_remove_folder_list}$(find "$folder" -type f -iname "$testapk")$newline"; # Add found file to list
+                        user_remove_folder_list="${user_remove_folder_list}$(printf "$(find "$folder" -type f -iname "$testapk")" | rev | cut -c 4- | rev)odex$newline"; # Add odex to list
 EOFILE
   else
-    tee -a "$1" > /dev/null <<'EOFILE'
-                    1)  user_remove_folder_list="${user_remove_folder_list}$(dirname "$(find "$folder" -type f -iname "$testapk")")"$'\n'; # Add found folder to list
+    cat <<'EOFILE'
+                    1)  user_remove_folder_list="${user_remove_folder_list}$(dirname "$(find "$folder" -type f -iname "$testapk")")$newline"; # Add found folder to list
 EOFILE
   fi
 }
@@ -310,47 +370,70 @@ versionnamehack(){
 }
 
 webviewcheckhack(){
-  if [ "$API" -ge "24" ]; then
-    tee -a "$1" > /dev/null <<'EOFILE'
-# If we're installing chrome and webviewgoogle, replace it with webviewstub unless override removal protection
-if ( contains "$gapps_list" "chrome" ) && ( contains "$gapps_list" "webviewgoogle" ) && ( ! grep -qiE '^override$' "$g_conf" ); then
-  gapps_list=${gapps_list/webviewgoogle/webviewstub}
-  install_note="${install_note}stubwebview_msg"$'\n' # make note that Stub Webview unless user Overrides
-fi
-
+  if [ "$API" -ge "29" ]; then
+    cat <<'EOFILE'
 # If we're installing webviewgoogle we MUST ADD webviewstub to $aosp_remove_list (if it's not already there)
 if ( contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$aosp_remove_list" "webviewstub" ); then
-  aosp_remove_list="${aosp_remove_list}webviewstub"$'\n'
+  aosp_remove_list="${aosp_remove_list}webviewstub$newline"
 fi;
 
 # If we're installing webviewstub we MUST ADD webviewgoogle to $aosp_remove_list (if it's not already there)
 if ( contains "$gapps_list" "webviewstub" ) && ( ! contains "$aosp_remove_list" "webviewgoogle" ); then
-  aosp_remove_list="${aosp_remove_list}webviewgoogle"$'\n'
+  aosp_remove_list="${aosp_remove_list}webviewgoogle$newline"
 fi;
 
 # If we're installing webviewgoogle OR webviewstub we PREFER TO ADD webviewstock to $aosp_remove_list (if it's not already there)
-# TODO in the future we could consider this behaviour even if installing just Chrome
 if ( ( contains "$gapps_list" "webviewgoogle" ) || ( contains "$gapps_list" "webviewstub" ) ) && ( ! contains "$aosp_remove_list" "webviewstock" ); then
-  aosp_remove_list="${aosp_remove_list}webviewstock"$'\n'
+  aosp_remove_list="${aosp_remove_list}webviewstock$newline"
+fi
+
+# If we're NOT installing webviewgoogle OR webviewstub and webviewstock is in $aosp_remove_list then user must override removal protection
+# Chrome is not there since on Android 10+ it's not a webview provider anymore
+if ( ! contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$gapps_list" "webviewstub" ) && ( contains "$aosp_remove_list" "webviewstock" ) && ( ! grep -qiE '^override$' "$g_conf" ); then
+  aosp_remove_list=${aosp_remove_list/webviewstock} # we'll prevent webviewstock from being removed so user isn't left with no WebView
+  install_note="${install_note}nowebview_msg$newline" # make note that Stock Webview can't be removed unless user Overrides
+fi
+EOFILE
+  elif [ "$API" -ge "24" ]; then
+    cat <<'EOFILE'
+# If we're installing chrome and webviewgoogle, replace it with webviewstub unless override removal protection
+if ( contains "$gapps_list" "chrome" ) && ( contains "$gapps_list" "webviewgoogle" ) && ( ! grep -qiE '^override$' "$g_conf" ); then
+  gapps_list=${gapps_list/webviewgoogle/webviewstub}
+  install_note="${install_note}stubwebview_msg$newline" # make note that Stub Webview unless user Overrides
+fi
+
+# If we're installing webviewgoogle we MUST ADD webviewstub to $aosp_remove_list (if it's not already there)
+if ( contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$aosp_remove_list" "webviewstub" ); then
+  aosp_remove_list="${aosp_remove_list}webviewstub$newline"
+fi;
+
+# If we're installing webviewstub we MUST ADD webviewgoogle to $aosp_remove_list (if it's not already there)
+if ( contains "$gapps_list" "webviewstub" ) && ( ! contains "$aosp_remove_list" "webviewgoogle" ); then
+  aosp_remove_list="${aosp_remove_list}webviewgoogle$newline"
+fi;
+
+# If we're installing webviewgoogle OR webviewstub we PREFER TO ADD webviewstock to $aosp_remove_list (if it's not already there)
+if ( ( contains "$gapps_list" "webviewgoogle" ) || ( contains "$gapps_list" "webviewstub" ) ) && ( ! contains "$aosp_remove_list" "webviewstock" ); then
+  aosp_remove_list="${aosp_remove_list}webviewstock$newline"
 fi
 
 # If we're NOT installing webviewgoogle OR webviewstub OR chrome and webviewstock is in $aosp_remove_list then user must override removal protection
 if ( ! contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$gapps_list" "webviewstub" ) && ( ! contains "$gapps_list" "chrome" ) && ( contains "$aosp_remove_list" "webviewstock" ) && ( ! grep -qiE '^override$' "$g_conf" ); then
   aosp_remove_list=${aosp_remove_list/webviewstock} # we'll prevent webviewstock from being removed so user isn't left with no WebView
-  install_note="${install_note}nowebview_msg"$'\n' # make note that Stock Webview can't be removed unless user Overrides
+  install_note="${install_note}nowebview_msg$newline" # make note that Stock Webview can't be removed unless user Overrides
 fi
 EOFILE
   else
-    tee -a "$1" > /dev/null <<'EOFILE'
+    cat <<'EOFILE'
 # If we're installing webviewgoogle we SHOULD ADD webviewstock to $aosp_remove_list (if it's not already there)
 if ( contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$aosp_remove_list" "webviewstock" ); then
-  aosp_remove_list="${aosp_remove_list}webviewstock"$'\n'
+  aosp_remove_list="${aosp_remove_list}webviewstock$newline"
 fi
 
 # If we're NOT installing webviewgoogle and webviewstock is in $aosp_remove_list then user must override removal protection
 if ( ! contains "$gapps_list" "webviewgoogle" ) && ( contains "$aosp_remove_list" "webviewstock" ) && ( ! grep -qiE '^override$' "$g_conf" ); then
   aosp_remove_list=${aosp_remove_list/webviewstock}; # we'll prevent webviewstock from being removed so user isn't left with no WebView
-  install_note="${install_note}nowebview_msg"$'\n' # make note that Stock Webview can't be removed unless user Overrides
+  install_note="${install_note}nowebview_msg$newline" # make note that Stock Webview can't be removed unless user Overrides
 fi
 EOFILE
   fi
@@ -358,7 +441,7 @@ EOFILE
 
 webviewignorehack(){
   if [ "$API" -ge "24" ]; then
-    tee -a "$1" > /dev/null <<'EOFILE'
+    cat <<'EOFILE'
 if [ "$ignoregooglewebview" = "true" ]; then  # No AOSP WebView
   if ( ! contains "$gapps_list" "webviewgoogle" ) && ( ! contains "$gapps_list" "webviewstub" ) && ( ! contains "$gapps_list" "chrome" ) && ( ! grep -qiE '^override$' "$g_conf" ); then  # Don't remove components if no other WebViewProvider installed
     if [ -d "/system/app/Chrome" ]; then
@@ -371,7 +454,7 @@ if [ "$ignoregooglewebview" = "true" ]; then  # No AOSP WebView
       sed -i "\:/system/app/WebViewStub:d" $gapps_removal_list;
       ignoregooglewebview="true[NoRemoveStub]"
     fi
-    install_note="${install_note}nogooglewebview_removal"$'\n'; # make note that Google WebView will not be removed
+    install_note="${install_note}nogooglewebview_removal_msg$newline"; # make note that Google WebView will not be removed
   elif ( contains "$gapps_list" "webviewgoogle" ); then  # No AOSP WebView, but Google WebView is being installed, no reason to protect the current components
     ignoregooglewebview="false[WebViewGoogle]"
   elif ( contains "$gapps_list" "webviewstub" ); then  # No AOSP WebView, but WebView Stub is being installed, no reason to protect the current components
@@ -382,20 +465,41 @@ if [ "$ignoregooglewebview" = "true" ]; then  # No AOSP WebView
 fi
 EOFILE
   else
-    tee -a "$1" > /dev/null <<'EOFILE'
+    cat <<'EOFILE'
 if [ "$ignoregooglewebview" = "true" ]; then  # No AOSP WebView
   if ( ! contains "$gapps_list" "webviewgoogle" ) && ( ! grep -qiE '^override$' "$g_conf" ); then  # Don't remove Google WebView components if no other WebViewProvider installed
     sed -i "\:/system/lib/$WebView_lib_filename:d" $gapps_removal_list;
     sed -i "\:/system/lib64/$WebView_lib_filename:d" $gapps_removal_list;
     sed -i "\:/system/app/WebViewGoogle:d" $gapps_removal_list;
     ignoregooglewebview="true[NoRemove]"
-    install_note="${install_note}nogooglewebview_removal"$'\n'; # make note that Google WebView will not be removed
+    install_note="${install_note}nogooglewebview_removal_msg$newline"; # make note that Google WebView will not be removed
   else  # No AOSP WebView, but Google WebView is being installed, no reason to protect the current components
     ignoregooglewebview="false[WebViewGoogle]"
   fi
 elif ( ! contains "$gapps_list" "webviewgoogle" ); then  # AOSP WebView, but no Google WebView being installed, make sure to protect the current AOSP components that share name with Google WebView components (Pre-Marshmallow)
   sed -i "\:/system/lib/$WebView_lib_filename:d" $gapps_removal_list;
   sed -i "\:/system/lib64/$WebView_lib_filename:d" $gapps_removal_list;
+fi
+EOFILE
+  fi
+}
+
+androidautohack(){
+  if [ "$API" -ge "30" ]; then
+    cat <<'EOFILE'
+# If we're installing androidauto we MUST ADD gearheadstub to $aosp_remove_list (if it's not already there)
+if ( contains "$gapps_list" "androidauto" ) && ( ! contains "$aosp_remove_list" "gearheadstub" ); then
+  aosp_remove_list="${aosp_remove_list}gearheadstub$newline"
+fi
+
+# If we're installing gearheadstub we MUST ADD androidauto to $aosp_remove_list (if it's not already there)
+if ( contains "$gapps_list" "gearheadstub" ) && ( ! contains "$aosp_remove_list" "androidauto" ); then
+  aosp_remove_list="${aosp_remove_list}androidauto$newline"
+fi
+
+# If we're installing androidauto AND gearheadstub we MUST REMOVE gearheadstub from $gapps_list (since it's not required)
+if ( contains "$gapps_list" "gearheadstub" ) && ( contains "$gapps_list" "androidauto" ); then
+  gapps_list=${gapps_list/gearheadstub}
 fi
 EOFILE
   fi
@@ -418,7 +522,10 @@ setupwizardtablet"
 }
 
 api21hack(){
-  if [ "$API" -ge "21" ]; then
+  if [ "$API" -lt "21" ]; then
+    gappsfull="$gappsfull
+music"
+  else
     if [ "$API" -eq "21" ]; then
       gappscore="$gappscore
 gmssetup
@@ -433,6 +540,8 @@ wallpapers"
     gappsstock="$gappsstock
 androidauto
 contactsgoogle"
+    gappsfull="$gappsfull
+ytmusic"
     miniremove="$miniremove
 clockstock
 tagstock"
@@ -477,6 +586,8 @@ dialergoogle"
 cameragooglelegacy"
     webviewstocklibs='lib/$WebView_lib_filename
 lib64/$WebView_lib_filename
+product/lib/$WebView_lib_filename
+product/lib64/$WebView_lib_filename
 '  # On Marshmallow the AOSP WebViewlibs must be removed, since they are embedded in the Google WebView APK; this assumes also any pre-bundled Google WebView with the ROM uses embedded libs; use single quote to not replace variable names
     webviewgappsremove=""
   gappstvstock="$gappstvstock
@@ -486,7 +597,9 @@ packageinstallergoogle"  # On AndroidTV 6.0+ packageinstallergoogle is also inst
 googletts"
     webviewstocklibs=""  # On non-Marshmallow the WebViewlibs should not be considered part of the Stock/AOSP WebView, since they are shared with the Google WebView
     webviewgappsremove="lib/libwebviewchromium.so
-lib64/libwebviewchromium.so"  # On non-Marshmallow the WebViewlibs are to be explictly included as a Google WebView file in gapps-remove.txt
+lib64/libwebviewchromium.so
+product/lib/libwebviewchromium.so
+product/lib64/libwebviewchromium.so"  # On non-Marshmallow the WebViewlibs are to be explictly included as a Google WebView file in gapps-remove.txt
   gappstvstock="$gappstvstock
 tvvoiceinput"  # On pre-Marshmallow TV Voiceinput exists
   fi
@@ -516,7 +629,7 @@ webviewstub"  # On Nougat and higher we might want to install the WebViewStub in
     gappsfull_optional="$gappsfull_optional
 moviesvrmode"
   fi
-  if [ "$ARCH" = "arm64" ]; then  # for now only available on arm64
+  if [ "$ARCH" = "arm64" ]; then # for now only available on arm64
     gappsmini_optional="$gappsmini_optional
 photosvrmode"
   fi
@@ -542,49 +655,88 @@ api26hack(){
       gappscore="$gappscore
 platformservicesoreo"  # Include Android 8.0 specific Platform Services with Android 8.0
     fi
-    gappscore="$gappscore
-carriersetup
+    if [ "$API" -eq "26" ]; then
+      gappscore="$gappscore
 gmssetup"
+    fi
+    gappscore="$gappscore
+carriersetup"
     gappspico="$gappspico
 packageinstallergoogle"
-    gappstvstock="$gappstvstock
+    gappstvmini="$gappstvmini
 setupwraith
 tvlauncher
 tvrecommendations"  # On Android 8.0+ a different launcher exists. SuW also works without needing platform signed
   fi
 }
 
-# Does nothing now, here for completeness
 api27hack(){
   if [ "$API" -eq "27" ]; then
-    if [ "$ARCH" = "arm64" ]; then  # for now only available on arm64
-      gappscore="$gappscore"
-    fi
-    gappscore="$gappscore"
+    gappscore="$gappscore
+gmssetup"
   fi
 }
 
 api28hack(){
   if [ "$API" -ge "28" ]; then
+    if [ "$API" -eq "28" ]; then  # It is in micro starting from API 29
+      gappssuper="$gappssuper
+actionsservices"
+    fi
     if [ "$ARCH" = "arm64" ] && [ "$API" -eq "28" ]; then
       gappsnano="$gappsnano
-platformservicespie"  # Include Pie-specific Android Platform Services with Android 9.0
+platformservices"  # Include Android Platform Services only for arm64 Android 9.0
     fi
     gappscore="$gappscore
 backuprestore
-soundpicker"
+datatransfertool"
     gappsnano="$gappsnano
 markup
+soundpicker
 wellbeing"
+    gappsfull="$gappsfull
+recorder"
     gappssuper="$gappssuper
-actionsservices
 bettertogether"
+    gappstvcore="$gappstvcore
+calsync
+googlepartnersetup
+googleonetimeinitializer"
+  fi
+
+  if [ "$API" -lt "28" ]; then
+    gappstvcore="$gappstvcore
+notouch
+tvframework
+secondscreensetup
+secondscreenauthbridge
+tvpackageinstallergoogle" # Several atv packages were removed in Android 9.0
+  fi
+}
+
+api29hack(){
+  if [ "$API" -ge "29" ]; then
+    gappspico="$gappspico
+gearheadstub"  # Include Android Auto stub file with Android 10.0+
+    if [ "$ARCH" = "arm64" ]; then # for now only available on arm64
+      gappsfull="$gappsfull
+trichromelibrary"
+    fi
+    gappsmicro="$gappsmicro
+actionsservices" # Include Actions Services with Android 10.0 for Pixel Launcher to work
+  fi
+}
+
+api30hack(){ 
+  if [ "$API" -ge "30" ]; then
+    gappsmicro="$gappsmicro
+quickaccesswallet" # Include QuickAccessWallet with Android 11.0 for Pixel Launcher to work
   fi
 }
 
 sdkversionhacks(){
   case "$package" in
-    com.android.facelock|com.google.android.configupdater|com.google.android.feedback|com.google.android.gsf.login|com.google.android.partnersetup|com.google.android.setupwizard|com.google.android.syncadapters.contacts)
+    com.google.android.configupdater|com.google.android.feedback|com.google.android.gsf.login|com.google.android.partnersetup|com.google.android.setupwizard|com.google.android.syncadapters.contacts)
       case "$versioncode" in
         *23) sdkversion="23";;
         *24) sdkversion="24";;
@@ -592,6 +744,8 @@ sdkversionhacks(){
         *26) sdkversion="26";;
         *27) sdkversion="27";;
         *28) sdkversion="28";;
+        *29) sdkversion="29";;
+        *30) sdkversion="30";;
         *) ;;
       esac;;
   esac

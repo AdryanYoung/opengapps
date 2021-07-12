@@ -13,13 +13,13 @@
 TOPDIR := .
 BUILD_SYSTEM := $(TOPDIR)/scripts
 BUILD_GAPPS := $(BUILD_SYSTEM)/build_gapps.sh
-APIS := 19 21 22 23 24 25 26 27 28
+APIS := 19 21 22 23 24 25 26 27 28 29 30
 PLATFORMS := arm arm64 x86 x86_64
 LOWEST_API_arm := 19
 LOWEST_API_arm64 := 21
 LOWEST_API_x86 := 19
 LOWEST_API_x86_64 := 21
-VARIANTS := super stock full mini micro nano pico aroma tvstock
+VARIANTS := super stock full mini micro nano pico aroma tvstock tvmini
 BUILDDIR := $(TOPDIR)/build
 CACHEDIR := $(TOPDIR)/cache
 OUTDIR := $(TOPDIR)/out

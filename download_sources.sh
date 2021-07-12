@@ -24,7 +24,7 @@ SCRIPTS="$TOP/scripts"
 . "$SCRIPTS/inc.tools.sh"
 
 # Check tools
-checktools git lzip
+checktools git git-lfs
 
 argument() {
   case $1 in
@@ -65,13 +65,6 @@ for module in $modules; do
     echo "ERROR during git execution, aborted!"
     exit 1
   fi
-  lzfiles="$(find "sources/$module/" -name "*.apk.lz")" 2>/dev/null
-  for f in $lzfiles; do
-    if ! [ -e "$(dirname "$f")/$(basename -s.lz "$f")" ]; then  # if this archive was not extracted yet
-      rm -f "$(dirname "$f")/"*.apk  # clean-up any old left over outdated APKs
-      lzip -d -k -f "$f"  # put our new APK in place
-    fi
-  done
 done
-git submodule foreach -q 'branch="$(git config -f "$toplevel/.gitmodules" "submodule.$name.branch")"; git checkout -q "$branch"; git pull -q $depth --rebase'
+git submodule foreach -q 'branch="$(git config -f "$toplevel/.gitmodules" "submodule.$name.branch")"; git checkout -q "$branch"; git pull -q $depth --rebase; git lfs pull'
 popd > /dev/null
